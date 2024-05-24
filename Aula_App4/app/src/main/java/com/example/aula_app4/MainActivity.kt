@@ -5,6 +5,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -12,7 +13,10 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Button
+import androidx.compose.material3.Divider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -51,7 +55,7 @@ class MainActivity : ComponentActivity() {
     private val viewModel by viewModels<PessoaViewModel>(
         factoryProducer = {
             object : ViewModelProvider.Factory{
-                override fun <T: ViewModel> create(modelClass: Class<T>):T{
+                override fun <T : ViewModel> create(modelClass: Class<T>): T {
                     return PessoaViewModel(Repository(db)) as T
                 }
             }
@@ -67,7 +71,7 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    App(viewModel)
+                    App(viewModel, this)
                 }
             }
         }
@@ -75,31 +79,45 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-fun App(viewModel: PessoaViewModel) {
+fun App(viewModel: PessoaViewModel, mainActivity: MainActivity){
     var nome by remember {
         mutableStateOf("")
     }
 
-    var Telefone by remember {
+    var telefone by remember {
         mutableStateOf("")
     }
+
     val pessoa = Pessoa(
         nome,
-        Telefone
+        telefone
     )
+
+    var pessoaList by remember {
+        mutableStateOf(listOf<Pessoa>())
+    }
+
+    viewModel.getPessoa().observe(mainActivity){
+        pessoaList = it
+    }
 
     Column(
         Modifier
-            .background(Color.Black)
+            .background(Color.White)
     ) {
         Row(
             Modifier
-                .background(Color.White)
+                .padding(20.dp)
+        ){
+
+        }
+        Row(
+            Modifier
                 .fillMaxWidth(),
             Arrangement.Center
-        ) {
+        ){
             Text(
-                text = "App Cadastro Cliente",
+                text = "Cadatrar Cliente",
                 fontFamily = FontFamily.SansSerif,
                 fontWeight = FontWeight.Bold,
                 fontSize = 30.sp
@@ -108,7 +126,7 @@ fun App(viewModel: PessoaViewModel) {
         Row(
             Modifier
                 .padding(20.dp)
-        ) {
+        ){
 
         }
         Row(
@@ -116,7 +134,8 @@ fun App(viewModel: PessoaViewModel) {
                 .fillMaxWidth(),
             Arrangement.Center
         ) {
-            TextField(value = nome,
+            TextField(
+                value = nome,
                 onValueChange = { nome = it },
                 label = { Text(text = "Nome:") }
             )
@@ -124,7 +143,7 @@ fun App(viewModel: PessoaViewModel) {
         Row(
             Modifier
                 .padding(20.dp)
-        ) {
+        ){
 
         }
         Row(
@@ -132,33 +151,91 @@ fun App(viewModel: PessoaViewModel) {
                 .fillMaxWidth(),
             Arrangement.Center
         ) {
-            TextField(value = Telefone,
-                onValueChange = { Telefone = it },
+            TextField(
+                value = telefone,
+                onValueChange = { telefone = it },
                 label = { Text(text = "Telefone:") }
             )
         }
         Row(
             Modifier
                 .padding(20.dp)
-        ) {
+        ){
 
         }
         Row(
             Modifier
                 .fillMaxWidth(),
             Arrangement.Center
-        ) {
-            Button(onClick = {
-                viewModel.upsertPessoa(pessoa)
-            }) {
+        ){
+            Button(
+                onClick = {
+                    viewModel.upsertPessoa(pessoa)
+                    nome = ""
+                    telefone = ""
+                }
+            ) {
                 Text(text = "Cadastrar")
+            }
+        }
+        Row(
+            Modifier
+                .padding(20.dp)
+        ){
+
+        }
+        Row(
+            Modifier
+                .fillMaxWidth(),
+            Arrangement.Center
+        ){
+            Column(
+                Modifier
+                    .fillMaxWidth(0.5f)
+            ) {
+                Text(text = "Nome")
+            }
+            Column(
+                Modifier
+                    .fillMaxWidth(0.5f)
+            ) {
+                Text(text = "Telefone")
+            }
+        }
+        Divider()
+        LazyColumn {
+            items(pessoaList){ pessoa ->
+                Row(
+                    Modifier
+                        .clickable {
+                            viewModel.deletePessoa(pessoa)
+                        }
+                        .fillMaxWidth(),
+                    Arrangement.Center
+                ){
+                    Column(
+                        Modifier
+                            .fillMaxWidth(0.5f),
+                        Arrangement.Center
+                    ) {
+                        Text(text = "${pessoa.nome}")
+                    }
+                    Column(
+                        Modifier
+                            .fillMaxWidth(0.5f),
+                        Arrangement.Center
+                    ) {
+                        Text(text = "${pessoa.telefone}")
+                    }
+                }
+                Divider()
             }
         }
     }
 }
 
-    /*@Preview
-    @Composable
-    fun AppPreview() {
-        App()
-    }*/
+/*@Preview
+@Composable
+fun AppPreview() {
+    App()
+}*/
