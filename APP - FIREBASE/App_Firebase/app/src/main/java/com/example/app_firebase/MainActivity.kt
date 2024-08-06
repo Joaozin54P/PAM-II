@@ -102,13 +102,12 @@ fun App(db: FirebaseFirestore) {
                             "nome" to nome,
                             "telefone" to telefone
                         )
-                        db.collection("Clientes").document("PrimeiroCliente")
-                            .set(client)
-                            .addOnSuccessListener {
-                                Log.d("Firestore", "Document successfully written!")
+                        db.collection("Clientes").add(client)
+                            .addOnSuccessListener { documentReference ->
+                                Log.d(TAG, "DocumentSnapshot written with ID ${documentReference.id}")
                             }
                             .addOnFailureListener { e ->
-                                Log.w("Firestore", "Error writing document", e)
+                                Log.w(TAG, "Error writing document", e)
                             }
                     }) {
                         Text(text = "Cadastrar")
