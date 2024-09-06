@@ -1,44 +1,32 @@
 package com.example.app_firebase
 
 import android.content.ContentValues.TAG
+import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Button
-import androidx.compose.material3.Divider
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextField
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.annotation.RequiresApi
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontFamily
-import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.app_firebase.ui.theme.App_FirebaseTheme
-import com.google.firebase.Firebase
+import com.example.app_firebase.ui.theme.NerkoOneFontFamily // Importa a fonte personalizada
+import com.example.app_firebase.ui.theme.Verdinho
+import com.example.app_firebase.ui.theme.Vorde
 import com.google.firebase.firestore.FirebaseFirestore
-import com.google.firebase.firestore.firestore
 
 class MainActivity : ComponentActivity() {
-    val db = Firebase.firestore
+    private val db = FirebaseFirestore.getInstance()
 
+    @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
@@ -47,113 +35,141 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun App(db: FirebaseFirestore) {
     var nome by remember { mutableStateOf("") }
     var telefone by remember { mutableStateOf("") }
+    var clientes by remember { mutableStateOf<List<Map<String, String>>>(listOf()) }
+
+    // Função para carregar os clientes e logar no Logcat
+    fun loadClientes() {
+        db.collection("Clientes")
+            .get()
+            .addOnSuccessListener { result ->
+                val fetchedClientes = result.documents.map { document ->
+                    mapOf(
+                        "nome" to (document.getString("nome") ?: ""),
+                        "telefone" to (document.getString("telefone") ?: "")
+                    )
+                }
+                clientes = fetchedClientes
+
+                // Logar clientes no Logcat
+                for (cliente in fetchedClientes) {
+                    Log.d(TAG, "Cliente: Nome=${cliente["nome"]}, Telefone=${cliente["telefone"]}")
+                }
+            }
+            .addOnFailureListener { exception ->
+                Log.w(TAG, "Error getting documents: ", exception)
+            }
+    }
+
+    // Carregar clientes ao inicializar
+    LaunchedEffect(Unit) {
+        loadClientes()
+    }
 
     App_FirebaseTheme {
-        // A surface container using the 'background' color from the theme
         Surface(
             modifier = Modifier.fillMaxSize(),
             color = MaterialTheme.colorScheme.background
         ) {
             Column(
-                Modifier.fillMaxSize(),
-
-                ) {
+                Modifier
+                    .fillMaxSize()
+                    .padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                // Título
                 Row(
                     Modifier
                         .fillMaxWidth()
-                        .height(40.dp),
-
-                    Arrangement.Center
+                        .height(55.dp),
+                    horizontalArrangement = Arrangement.Center
                 ) {
-                    Text(text = "App Firebase - Cadastrar Clientes", textAlign = TextAlign.Center, fontSize = 24.sp, fontFamily = FontFamily.Serif)
+                    Text(
+                        text = "App Firebase - Cadastrar Clientes",
+                        textAlign = TextAlign.Center,
+                        fontSize = 24.sp,
+                        fontFamily = NerkoOneFontFamily, // Usando a fonte personalizada
+                        color = Verdinho
+                    )
                 }
-                Spacer(modifier = Modifier.height(35.dp))
 
-                Row {
-                    Column(Modifier.fillMaxWidth(0.3f)) {
-                        Text(text = "Nome:",fontSize = 24.sp, fontFamily = FontFamily.Serif)
-                    }
-                    Column() {
-
-                        TextField(value = nome, onValueChange = {nome = it})
-                    }
-                }
-                Spacer(modifier = Modifier.height(50.dp))
-                Row {
-                    Column(Modifier.fillMaxWidth(0.3f)) {
-                        Text(text = "Telefone:", fontSize = 24.sp, fontFamily = FontFamily.Serif)
-                    }
-                    Column() {
-                        TextField(value = telefone, onValueChange =  {telefone = it})
-                    }
-                }
-                Spacer(modifier = Modifier.height(45.dp))
-                Row(
-                    Modifier.fillMaxWidth(),
-                    Arrangement.Center
-                ) {
-                    Button(onClick = {
-                        val client = hashMapOf(
-                            "nome" to nome,
-                            "telefone" to telefone
-                        )
-                        db.collection("Clientes").add(client)
-                            .addOnSuccessListener { documentReference ->
-                                Log.d(TAG, "DocumentSnapshot written with ID ${documentReference.id}")
-                            }
-                            .addOnFailureListener { e ->
-                                Log.w(TAG, "Error writing document", e)
-                            }
-                    }) {
-                        Text(text = "Cadastrar")
-                    }
-                }
-                Row(
+                // Formulário de Cadastro
+                Column(
                     Modifier
                         .fillMaxWidth()
-                        .padding(20.dp)
+                        .padding(bottom = 16.dp)
                 ) {
-                    
-                }
-                Row(
-                    Modifier
-                        .fillMaxWidth()
-                ) {
-                    Column(
-                        Modifier
-                            .fillMaxWidth(0.3f)
-                    ) {
-                        Text(text = "Nome:")
-                    }
+                    Text(text = "Nome:", color = Vorde , fontSize = 18.sp, fontFamily = NerkoOneFontFamily)
+                    TextField(
+                        value = nome,
+                        onValueChange = { nome = it },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Text(text = "Telefone:", color = Vorde , fontSize = 18.sp, fontFamily = NerkoOneFontFamily)
+                    TextField(
+                        value = telefone,
+                        onValueChange = { telefone = it },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+                    // Botão Centralizado
                     Row(
-                        Modifier
+                        modifier = Modifier
                             .fillMaxWidth()
+                            .padding(top = 16.dp),
+                        horizontalArrangement = Arrangement.Center
                     ) {
-                        Column(
-
-                        ) {
-                            db.collection("Clientes")
-                                .get()
-                                .addOnSuccessListener { documents ->
-                                    for (document in documents) {
-                                        val lista = hashMapOf(
-                                            "nome" to "${document.data.get("nome")}",
-                                            "telefone" to "${document.data.get("telefone")}"
-                                        )
-                                        Log.d(TAG, "${document.id} => ${document.data}")
-                                    }
+                        Button(onClick = {
+                            val client = hashMapOf(
+                                "nome" to nome,
+                                "telefone" to telefone
+                            )
+                            db.collection("Clientes").add(client)
+                                .addOnSuccessListener {
+                                    Log.d(TAG, "DocumentSnapshot added")
+                                    loadClientes() // Recarregar a lista de clientes após adicionar um novo
                                 }
-                                .addOnFailureListener { exception ->
-                                    Log.w(TAG, "Error getting documents: ", exception)
-                                } }
+                                .addOnFailureListener { e ->
+                                    Log.w(TAG, "Error adding document", e)
+                                }
+                        }) {
+                            Text(text = "Cadastrar", fontFamily = NerkoOneFontFamily)
+                        }
+                    }
+                }
+
+                // Lista de Clientes com rolagem
+                Text(
+                    text = "Lista de Clientes:",
+                    fontSize = 18.sp,
+                    color = Verdinho,
+                    fontFamily = NerkoOneFontFamily
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .weight(1f) // Ocupa o espaço restante
+                ) {
+                    items(clientes) { cliente ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 4.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text(text = cliente["nome"] ?: "", fontFamily = NerkoOneFontFamily)
+                            Text(text = cliente["telefone"] ?: "", fontFamily = NerkoOneFontFamily)
                         }
                     }
                 }
             }
         }
     }
+}
